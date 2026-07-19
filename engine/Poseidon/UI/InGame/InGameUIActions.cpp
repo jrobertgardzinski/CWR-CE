@@ -159,9 +159,18 @@ PackedBoolArray ListSelectedUnits()
 
 } // namespace Poseidon
 #include <Poseidon/UI/InGame/InGameUIDrawShared.hpp>
+static bool SameAction(const UIAction& a, const UIAction& b)
+{
+    return a.type == b.type && a.target == b.target && a.param == b.param && a.param2 == b.param2 &&
+           a.param3 == b.param3;
+}
+
 UIActions::UIActions()
 {
     _selected.type = ATNone;
+    _topAction.type = ATNone;
+    _topChanged = Foundation::UITime(0);
+    _selectionLost = Foundation::UITime(0);
 
     _right = 0.98;
     _bottom = 0.88;
@@ -247,14 +256,13 @@ int UIActions::FindSelected()
     }
     for (int i = 0; i < n; i++)
     {
-        const UIAction& action = Get(i);
-        if (action.type == _selected.type && action.target == _selected.target && action.param == _selected.param &&
-            action.param2 == _selected.param2 && action.param3 == _selected.param3)
+        if (SameAction(Get(i), _selected))
         {
             return i;
         }
     }
     _selected.type = ATNone;
+    _selectionLost = Glob.uiTime;
     return 0; // default
 }
 
@@ -733,6 +741,15 @@ void UIActions::ProcessAction(AIUnit* unit)
     {
         return;
     }
+    // activating the default (top) entry right after the list changed under
+    // the cursor is almost always unintended - swallow the keypress and let
+    // the player see what is actually selected now
+    if (_selected.type == ATNone &&
+        (Glob.uiTime < _topChanged + protectionTime || Glob.uiTime < _selectionLost + protectionTime))
+    {
+        Refresh(true);
+        return;
+    }
     const UIAction& action = Get(i);
     if (action.hideOnUse)
     {
@@ -770,6 +787,20 @@ int CmpActions(const UIAction* action1, const UIAction* action2)
 void UIActions::Sort()
 {
     QSort(Data(), Size(), CmpActions);
+}
+
+void UIActions::NoteTopAction()
+{
+    if (Size() == 0)
+    {
+        _topAction.type = ATNone;
+        return;
+    }
+    if (!SameAction(Get(0), _topAction))
+    {
+        _topAction = Get(0);
+        _topChanged = Glob.uiTime;
+    }
 }
 
 static float ActionSourceCost(EntityAI* veh, Target* tgt)

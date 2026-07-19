@@ -38,6 +38,9 @@ class UIActions : public StaticArray<UIAction>
 	typedef StaticArray<UIAction> base;
 protected:
 	UIAction _selected;
+	UIAction _topAction; // identity of the first entry after the last sort
+	Poseidon::Foundation::UITime _topChanged;      // when the first entry last changed
+	Poseidon::Foundation::UITime _selectionLost;   // when a manual selection vanished
 
 	float _right, _bottom, _w, _h;	// _h is height of one row
 	int _rows;										// max rows
@@ -63,6 +66,7 @@ public:
 	void ProcessAction(AIUnit *unit);
 
 	void Sort();
+	void NoteTopAction(); // call after Sort - tracks first-entry changes
 
 	void OnDraw();
 

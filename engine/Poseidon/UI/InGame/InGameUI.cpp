@@ -281,6 +281,7 @@ void InGameUI::ProcessActions(AIUnit* unit)
 
     // sort actions
     _actions.Sort();
+    _actions.NoteTopAction();
 }
 
 // Global selected units - valid for IngameUI and map
