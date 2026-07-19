@@ -1543,4 +1543,155 @@ void InGameUI::ProcessMenu(const Camera& camera, EntityAI* vehicle)
     } // if( _menuCurrent )
 }
 
+// quick command rose - a modern one-gesture alternative to the numeric
+// command menu for the most used orders; hold the key, flick the mouse
+// toward a slice, release to issue
+
+static RString QuickCommandLabel(int slice)
+{
+    switch (slice)
+    {
+        case 0:
+            return LocalizeString(IDS_STOP);
+        case 1:
+            return RString("Open fire"); // no dedicated IDS in the 1.99 stringtable
+        case 2:
+            return LocalizeString(IDS_ENGAGE);
+        case 3:
+            return LocalizeString(IDS_REARM);
+        case 4:
+            return LocalizeString(IDS_EXPECT);
+        case 5:
+            return LocalizeString(IDS_HEAL);
+        case 6:
+            return RString("Hold fire"); // no dedicated IDS in the 1.99 stringtable
+        case 7:
+            return LocalizeString(IDS_GETOUT);
+    }
+    return RString();
+}
+
+void InGameUI::SimulateQuickCommand(AIUnit* unit)
+{
+    auto& input = InputSubsystem::Instance();
+    bool held = input.GetAction(UAQuickCommand) > 0;
+
+    // group leaders only - subordinates have nobody to command
+    if (held && (!unit || !unit->GetGroup() || unit->GetGroup()->Leader() != unit))
+    {
+        held = false;
+    }
+
+    if (held)
+    {
+        // capture aim movement while the rose is open
+        _quickCmdDX += input.ConsumeCursorDeltaX();
+        _quickCmdDY += input.ConsumeCursorDeltaY();
+        const float deadZone = 0.04f;
+        if (Square(_quickCmdDX) + Square(_quickCmdDY) > Square(deadZone))
+        {
+            // up is slice 0, clockwise
+            float ang = atan2(_quickCmdDX, -_quickCmdDY);
+            _quickCmdSel = (toIntFloor((ang + H_PI / 8) / (H_PI / 4)) + 8) % 8;
+        }
+        _quickCmdActive = true;
+    }
+    else if (_quickCmdActive)
+    {
+        int slice = _quickCmdSel;
+        _quickCmdActive = false;
+        _quickCmdSel = -1;
+        _quickCmdDX = _quickCmdDY = 0;
+        if (slice >= 0)
+        {
+            ExecuteQuickCommand(unit, slice);
+        }
+    }
+}
+
+void InGameUI::ExecuteQuickCommand(AIUnit* unit, int slice)
+{
+    if (!unit)
+    {
+        return;
+    }
+    AIGroup* grp = unit->GetGroup();
+    if (!grp)
+    {
+        return;
+    }
+    EntityAI* vehicle = unit->GetVehicle();
+
+    switch (slice)
+    {
+        case 0:
+            IssueCommand(vehicle, Command::Stop);
+            break;
+        case 1:
+            grp->SendOpenFire(OFSOpenFire, ListSelectedUnits());
+            ClearSelectedUnits();
+            break;
+        case 2:
+            IssueEngage(grp);
+            break;
+        case 3:
+            // every selected soldier finds his own ammo source
+            IssueCommand(vehicle, Command::Rearm);
+            break;
+        case 4:
+            IssueCommand(vehicle, Command::Expect);
+            break;
+        case 5:
+            // the group finds the nearest medic itself
+            IssueCommand(vehicle, Command::Heal);
+            break;
+        case 6:
+            grp->SendOpenFire(OFSHoldFire, ListSelectedUnits());
+            ClearSelectedUnits();
+            break;
+        case 7:
+            IssueCommand(vehicle, Command::GetOut);
+            break;
+    }
+}
+
+void InGameUI::DrawQuickCommand()
+{
+    if (!_quickCmdActive)
+    {
+        return;
+    }
+
+    static FontID tahomaB24Font = GetFontID("tahomaB24");
+    Ref<Font> font = GEngine->LoadFont(tahomaB24Font);
+    const float size = 0.02f;
+
+    const int w = GLOB_ENGINE->Width2D();
+    const int h = GLOB_ENGINE->Height2D();
+
+    const float cx = 0.5f, cy = 0.5f;
+    const float ry = 0.16f;
+    const float rx = ry * (float)h / (float)w;
+
+    PackedColor textColor = PackedColor(Color(0.8, 0.8, 0.8, 1));
+    PackedColor selColor = PackedColor(Color(0.9, 0.8, 0, 1));
+
+    for (int i = 0; i < 8; i++)
+    {
+        RString text = QuickCommandLabel(i);
+        float ang = i * (H_PI / 4);
+        float x = cx + rx * sin(ang);
+        float y = cy - ry * cos(ang);
+        float tw = GEngine->GetTextWidth(size, font, text);
+        PackedColor color = i == _quickCmdSel ? selColor : textColor;
+        GEngine->DrawText(Point2DFloat(x - 0.5f * tw, y - 0.5f * size), size, font, color, text);
+        if (i == _quickCmdSel)
+        {
+            GEngine->DrawLine(
+                Line2DPixel((x - 0.5f * tw) * w, (y + 0.6f * size) * h, (x + 0.5f * tw) * w, (y + 0.6f * size) * h),
+                color, color);
+        }
+    }
+}
+
 } // namespace Poseidon

@@ -1233,6 +1233,7 @@ UserActionDesc* InputSubsystem::GetUserActionDesc()
         UserActionDesc("SelectAll", IDS_USRACT_SELECT_ALL, SDL_SCANCODE_GRAVE, -1),
         UserActionDesc("Turbo", IDS_USRACT_TURBO, SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT, -1),
         UserActionDesc("Walk", IDS_USRACT_WALK, SDL_SCANCODE_F, -1),
+        UserActionDesc("QuickCommand", IDS_USRACT_QUICK_COMMAND, SDL_SCANCODE_K, -1),
         UserActionDesc(true, "AxisTurn", IDS_USRACT_TURN, INPUT_DEVICE_STICK_AXIS + 0, -1),
         UserActionDesc(true, "AxisDive", IDS_USRACT_ACCELERATE, INPUT_DEVICE_STICK_AXIS + 1, -1),
         UserActionDesc(true, "AxisRudder", IDS_USRACT_RUDDER, INPUT_DEVICE_STICK_AXIS + 5, -1),

@@ -18,6 +18,7 @@ UAMoveForward, UAMoveBack, UATurnLeft, UATurnRight, UAMoveUp, UAMoveDown, UAMove
     UAZoomOut, UALookAround, UALookAroundToggle, UALookLeftDown, UALookDown, UALookRightDown, UALookLeft, UALookCenter,
     UALookRight, UALookLeftUp, UALookUp, UALookRightUp, UAPrevChannel, UANextChannel, UAChat, UAVoiceOverNet,
     UANetworkStats, UANetworkPlayers, UASelectAll, UATurbo, UASlow,
+    UAQuickCommand, // hold + flick: quick command rose for group leaders
 
     UAAxisTurn, UAAxisDive, UAAxisRudder, UAAxisThrust,
     UAAimUp, UAAimDown, UAAimLeft, UAAimRight,

@@ -425,6 +425,7 @@ void InGameUI::SimulateHUD(const Camera& camera, EntityAI* vehicle, CameraType c
     if (!GWorld->Chat() && !GWorld->GetPlayerSuspended())
     {
         ProcessActions(unit);
+        SimulateQuickCommand(unit);
     }
 
     // focus may changed !!!

@@ -414,6 +414,14 @@ private:
 	void IssueFire(AIGroup *grp); // fire at current target
 	void IssueWatchAuto(AIGroup *grp); // watch around
 	void IssueWatch(AIGroup *grp,int what); // direction
+
+	// quick command rose - hold UAQuickCommand, flick the mouse, release
+	void SimulateQuickCommand(AIUnit *unit);
+	void ExecuteQuickCommand(AIUnit *unit, int slice);
+	void DrawQuickCommand();
+	bool _quickCmdActive = false;
+	float _quickCmdDX = 0, _quickCmdDY = 0;
+	int _quickCmdSel = -1;
 	void IssueWatchTarget(AIGroup *grp,int what); // target from the list
 	void IssueVMove(Transport *vehicle, int where);
 	void IssueMove(AIGroup *grp, int where);

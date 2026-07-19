@@ -1119,6 +1119,7 @@ void InGameUI::DrawHUD(const Camera& camera, EntityAI* vehicle, CameraType cam)
     if (_showCursors && !GWorld->GetPlayerSuspended())
     {
         _actions.OnDraw();
+        DrawQuickCommand();
     }
 
     // TD cheat

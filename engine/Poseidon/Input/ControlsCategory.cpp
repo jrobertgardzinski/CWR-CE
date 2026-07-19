@@ -18,7 +18,7 @@ const UserAction kOnFoot[] = {
     UAFire, UAReloadMagazine, UAToggleWeapons, UAHandgun, UALockTarget, UALockTargets, UARevealTarget, UAOptics,
     UAZoomIn, UAZoomOut,
     // Actions
-    UAAction,
+    UAAction, UAQuickCommand,
     // Gamepad aim grouping; hidden on KB&M on-foot rows.
     UAAimUp, UAAimDown, UAAimLeft, UAAimRight,
     // View / freelook
@@ -28,7 +28,8 @@ const UserAction kOnFoot[] = {
     UABinocular, UANightVision, UAN};
 
 const UserAction kVehicles[] = {UAMoveForward,  UAMoveBack,      UATurnLeft,         UATurnRight,   UATurbo,
-                                UAFire,         UALockTarget,    UALockTargets,      UAAction,      UAZoomIn,
+                                UAFire,         UALockTarget,    UALockTargets,      UAAction,      UAQuickCommand,
+                                UAZoomIn,
                                 UAZoomOut,      UALookAround,    UALookAroundToggle, UALookCenter,  UALookLeft,
                                 UALookRight,    UALookUp,        UALookDown,         UALookLeftUp,  UALookRightUp,
                                 UALookLeftDown, UALookRightDown, UAHeadlights,       UANightVision, UAN};
