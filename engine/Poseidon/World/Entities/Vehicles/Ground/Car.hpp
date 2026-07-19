@@ -141,6 +141,7 @@ class Car: public TankOrCar
 	float _thrustWanted,_thrust;
 	float _turnWanted,_turn;
 	float _turnIncreaseSpeed,_turnDecreaseSpeed;
+	float _steerIntegral; // AI steering PID integrator
 	
 
 	float _scudState;

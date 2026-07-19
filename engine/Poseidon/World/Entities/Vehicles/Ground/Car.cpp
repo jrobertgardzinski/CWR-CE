@@ -290,7 +290,8 @@ int GetTemplateSeed();
 
 Car::Car(VehicleType* name, Person* driver)
     : base(name, driver), _thrustWanted(0), _thrust(0), _turnWanted(0), _turn(0), _turnIncreaseSpeed(1),
-      _turnDecreaseSpeed(1), _reverseTimeLeft(0), _forwardTimeLeft(0), _wheelPhase(0), _track(_shape), _scudState(0)
+      _turnDecreaseSpeed(1), _steerIntegral(0), _reverseTimeLeft(0), _forwardTimeLeft(0), _wheelPhase(0),
+      _track(_shape), _scudState(0)
 {
     _isStopped = true;
 
@@ -1790,17 +1791,15 @@ void Car::AIPilot(AIUnit* unit, float deltaT)
     }
 #endif
 
-    float curHeading = atan2(Direction()[0], Direction()[2]);
-    float wantedHeading = curHeading + headChange;
-
-    // estimate inertial orientation change
+    // heading rate - exact derivative of atan2(dirX, dirZ) from angular velocity
+    // (replaces the fixed 1 s orientation prediction, which acted as a strong
+    // damping term and left a large steady-state error while turning)
     Matrix3Val orientation = Orientation();
     Matrix3Val derOrientation = _angVelocity.Tilda() * orientation;
-    Matrix3Val estOrientation = orientation + derOrientation * 1.0;
-    Vector3Val estDirection = estOrientation.Direction();
-    float estHeading = atan2(estDirection[0], estDirection[2]);
-
-    headChange = AngleDifference(wantedHeading, estHeading);
+    Vector3Val dir = orientation.Direction();
+    Vector3Val derDir = derOrientation.Direction();
+    float headingDenom = Square(dir[0]) + Square(dir[2]);
+    float headingRate = headingDenom > 1e-6 ? (dir[2] * derDir[0] - dir[0] * derDir[2]) / headingDenom : 0;
 
     {
         float aTP = fabs(turnPredict);
@@ -1859,11 +1858,26 @@ void Car::AIPilot(AIUnit* unit, float deltaT)
         _thrustWanted = thrust;
     }
 
-    _turnWanted = headChange * 4;
+    // PID steering: P on heading error, D on measured heading rate (no
+    // setpoint kick when the pursuit point moves), slow I trims constant
+    // yaw disturbances (road crown, slopes); gains tuned against the
+    // actuator slew model - P matches the legacy low-speed response
+    const float steerP = 4.0F;
+    const float steerD = 1.0F;
+    const float steerI = 0.2F;
+    float turnCmd = steerP * headChange - steerD * headingRate + steerI * _steerIntegral;
     if (reverse)
     {
-        _turnWanted = -_turnWanted;
+        turnCmd = -turnCmd;
+        _steerIntegral = 0;
     }
+    else if (fabs(turnCmd) < maxTurn && fabs(speedWanted) > 0.5F)
+    {
+        // conditional integration - no windup when saturated or stopped
+        _steerIntegral += headChange * deltaT;
+        saturate(_steerIntegral, -0.25F / steerI, +0.25F / steerI);
+    }
+    _turnWanted = turnCmd;
 
     // limit turn based on speed (to avoid slips)
 
