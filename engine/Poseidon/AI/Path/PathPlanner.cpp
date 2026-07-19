@@ -30,7 +30,7 @@ using namespace Foundation;
 using Foundation::EnumName;
 
 // A* algoritm for searching the best path
-#define ITER_PER_CYCLE 50
+#define ITER_PER_CYCLE 500 // per-think budget; 50 was tuned for 2001-era CPUs
 #define MAX_ITER 10000
 #define Directions 20
 #define direction_delta directions20
@@ -361,6 +361,8 @@ float ASSCostFunction::operator()(const ASSField& field1, const ASSField& field2
                 result -= ROAD_BONUS;
             }
         }
+        // the bonus must not make the edge negative - A* assumes non-negative costs
+        saturateMax(result, 0.0F);
     }
     return result;
 }
@@ -418,6 +420,7 @@ class ASSOpenList : public HeapArray<ASSNode*, MemAllocD, ASSOpenListTraits>
     void UpdateUp(ASSNode* node) { base::HeapUpdateUp(node); }
     void Add(ASSNode* node) { base::HeapInsert(node); }
     bool RemoveFirst(ASSNode*& node) { return base::HeapRemoveFirst(node); }
+    const ASSNode* GetFirst() const { return this->Size() > 0 ? (*this)[0] : nullptr; }
 };
 
 class ASSNodeRef : public SRef<ASSNode>
@@ -760,13 +763,40 @@ bool AIPathPlanner::ProcessSearching()
 #if CHECK_PERFORMANCE
     _timeTotal += int(ReadTsc() - _perfStart);
 #endif
-    if (_algorithm->IsDone())
+    if (_algorithm->IsDone() || _iterTotal >= MAX_ITER)
     {
         _searching = false;
+
+        const ASSNode* last = nullptr;
+        bool partial = false;
         if (_algorithm->IsFound())
         {
-            const ASSNode* last = _algorithm->GetLastNode();
+            last = _algorithm->GetLastNode();
+        }
+        else
+        {
+            // destination not reached - search space or iteration budget exhausted
+            // fall back to the most promising explored field and let the unit
+            // replan from there (see alternate goal handling in OperMap)
+            const ASSNode* best = _algorithm->GetBestNode();
+            if (best && best->_parent)
+            {
+                const ASSNode* root = best;
+                while (root->_parent)
+                {
+                    root = root->_parent;
+                }
+                // accept only when it brings us nearer to the destination than the start
+                if (best->_f - best->_g < root->_f - root->_g)
+                {
+                    last = best;
+                    partial = true;
+                }
+            }
+        }
 
+        if (last)
+        {
             int depth = 0;
             for (const ASSNode* cur = last; cur != nullptr; cur = cur->_parent)
             {
@@ -783,9 +813,19 @@ bool AIPathPlanner::ProcessSearching()
                 info._cost = cur->_g;
             }
 
+            if (partial)
+            {
+                // plan ends short of the wanted position
+                // aim there - CalculatePlanPositions ends the plan in _destination
+                _destination[0] = last->_field.coord.x * LandGrid + 0.5 * LandGrid;
+                _destination[2] = last->_field.coord.z * LandGrid + 0.5 * LandGrid;
+                _destination[1] = 0; // not used
+            }
+
 #if LOG_STRAT
-            LOG_DEBUG(AI, "Strategic path found: {}, length {}, cost {:.0f} (in {} steps, time {:.3f}):",
-                      (const char*)_vehicle->GetDebugName(), depth, last->_g, _iterTotal, 1e-6 * _timeTotal);
+            LOG_DEBUG(AI, "Strategic path found{}: {}, length {}, cost {:.0f} (in {} steps, time {:.3f}):",
+                      partial ? " (partial)" : "", (const char*)_vehicle->GetDebugName(), depth, last->_g, _iterTotal,
+                      1e-6 * _timeTotal);
 #endif
 
             CalculatePlanPositions();
@@ -802,16 +842,6 @@ bool AIPathPlanner::ProcessSearching()
             _algorithm = nullptr;
             return false;
         }
-    }
-    else if (_iterTotal >= MAX_ITER)
-    {
-#if LOG_STRAT
-        LOG_DEBUG(AI, "Strategic path not found - iterations limit reached: {} (in {} steps, time {:.3f})",
-                  (const char*)_vehicle->GetDebugName(), _iterTotal, 1e-6 * _timeTotal);
-#endif
-        _searching = false;
-        _algorithm = nullptr;
-        return false;
     }
     else
     {
@@ -1298,6 +1328,8 @@ float AIPathPlanner::GetCost(int xf, int zf, int dir, BYTE& mode)
                 result -= ROAD_BONUS;
             }
         }
+        // the bonus must not make the edge negative - A* assumes non-negative costs
+        saturateMax(result, 0.0F);
     }
     return result;
 }
