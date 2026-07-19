@@ -377,9 +377,10 @@ void DisplayMultiplayerSetup::Update()
     {
         lbox->ClearStrings();
 
-        const AutoArray<PlayerIdentity>& identities = *GetNetworkManager().GetIdentities();
-        if (&identities)
+        const AutoArray<PlayerIdentity>* identityList = GetNetworkManager().GetIdentities();
+        if (identityList)
         {
+            const AutoArray<PlayerIdentity>& identities = *identityList;
             for (int i = 0; i < identities.Size(); i++)
             {
                 const PlayerIdentity& identity = identities[i];

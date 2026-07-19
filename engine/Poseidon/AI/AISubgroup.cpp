@@ -1162,12 +1162,6 @@ void AISubgroup::UnitReplaced(AIUnit* unitOld, AIUnit* unitNew)
 
 void AISubgroup::AddUnit(AIUnit* unit)
 {
-    if (!this)
-    {
-        Fail("No subgroup");
-        return;
-    }
-
     AIGroup* grp = GetGroup();
     if (!grp)
     {
