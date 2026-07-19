@@ -1395,6 +1395,21 @@ void AIGroup::SendRadioReport(ReportSubject subject, Target& target)
         return;
     }
 
+    // ReportSent only deduplicates while the message waits in the radio
+    // queue - once spoken, every other spotter repeated the same contact;
+    // remember reported targets and keep quiet about them for a while
+    const float reportRepeatDelay = 25.0f;
+    for (int i = 0; i < NRecentReports; i++)
+    {
+        if (_recentReports[i].id == target.idExact && Glob.time < _recentReports[i].time + reportRepeatDelay)
+        {
+            return;
+        }
+    }
+    _recentReports[_recentReportNext].id = target.idExact;
+    _recentReports[_recentReportNext].time = Glob.time;
+    _recentReportNext = (_recentReportNext + 1) % NRecentReports;
+
     GetRadio().Transmit(new RadioMessageReportTarget(from, this, subject, target), GetCenter()->GetLanguage());
 }
 
