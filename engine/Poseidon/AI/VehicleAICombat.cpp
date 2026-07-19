@@ -1,4 +1,5 @@
 #include <Poseidon/Core/Application.hpp>
+#include <Poseidon/Core/Config/UserConfig.hpp>
 #include <Poseidon/AI/VehicleAI.hpp>
 #include <Poseidon/AI/AI.hpp>
 #include <Poseidon/AI/AIRadio.hpp>
@@ -364,6 +365,12 @@ void EntityAI::Repair(float ammount)
 
 void EntityAI::FieldTreat()
 {
+    if (!USER_CONFIG.IsEnabled(DTRealisticInjuries))
+    {
+        // classic behavior - treatment restores to full
+        Repair(1);
+        return;
+    }
     // field treatment is not surgery - it stops the bleeding, but a badly
     // wounded limb keeps part of its damage: the soldier fights on slower
     // and shakier (existing >= 0.3 wound effects), just never crawl-locked

@@ -21,6 +21,7 @@ enum DifficultyType
     DT3rdPersonView,
     DTTracers,
     DTUltraAI,
+    DTRealisticInjuries, // field treatment leaves residual wounds
     DTN // terminator / count
 };
 

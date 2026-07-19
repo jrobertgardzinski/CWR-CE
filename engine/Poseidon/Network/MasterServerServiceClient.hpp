@@ -61,7 +61,7 @@ struct MasterServerServiceRegistration
     std::string island;
     bool cadetMode = false;
     // Active difficulty flags packed as a bitmask: bit i == difficulty[i]
-    // (DifficultyType order, DTArmor=0 .. DTUltraAI=11).
+    // (DifficultyType order, DTArmor=0 .. DTRealisticInjuries=12).
     int difficulty = 0;
     bool joinInProgress = false;
     bool disabledAI = false;

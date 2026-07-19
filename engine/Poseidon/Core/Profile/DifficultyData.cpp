@@ -19,6 +19,7 @@ static DifficultyDesc s_diffDescs[DTN] = {
     DifficultyDesc("3rdPersonView",  0, true,  true,  true),
     DifficultyDesc("Tracers",        0, true,  true,  true),
     DifficultyDesc("UltraAI",        0, false, false, true),
+    DifficultyDesc("RealisticInjuries", 0, false, true, true),
 };
 // clang-format on
 
