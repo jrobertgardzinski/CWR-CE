@@ -208,9 +208,10 @@ void AStar<ASTAR_ARGS>::UpdateClosedList(Node *node, const Field &field, Node *p
 	AUTO_STATIC_ARRAY(Node *, stack, 256);
 	stack.Add(node);
 
-	while (int n = stack.Size() > 0)
+	while (stack.Size() > 0)
 	{
 		// pop node from stack
+		int n = stack.Size();
 		Node *parent = stack[n - 1];
 		stack.Delete(n - 1, 1);
 

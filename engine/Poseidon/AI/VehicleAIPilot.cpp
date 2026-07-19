@@ -738,7 +738,7 @@ void EntityAI::FormationPilot(float& speedWanted, float& headChange, float& turn
                 // do not try to overtake the vehicle you should follow
                 float dist = follow->Position().Distance(Position());
                 // keep safe distance based on his speed
-                float wantedDistance = factorZ * 0.6 + +fabs(follow->ModelSpeed().Z()) * 0.5;
+                float wantedDistance = factorZ * 0.6 + fabs(follow->ModelSpeed().Z()) * 0.5;
                 // if we are at wantedDistance from him, we want to go at his speed
                 float isFar = (dist - wantedDistance) * (0.4 / factorZ);
                 saturate(isFar, -0.3, 1);
@@ -1833,7 +1833,7 @@ void EntityAI::AvoidCollision(float deltaT, float& speedWanted, float& headChang
                 if (whoGroup)
                 {
                     AICenter* whoCenter = whoGroup->GetCenter();
-                    if (myCenter->IsEnemy(whoCenter->GetSide()))
+                    if (myCenter && myCenter->IsEnemy(whoCenter->GetSide()))
                     {
                         continue;
                     }

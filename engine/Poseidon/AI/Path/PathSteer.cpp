@@ -111,6 +111,10 @@ inline Vector3 NearestPointInfinite(Vector3Par beg, Vector3Par end, Vector3Par p
 
 float Path::CostAtPos(Vector3Par pos) const
 {
+    if (Size() <= 0)
+    {
+        return 0; // no path - no cost
+    }
     if (Size() < 2)
     {
         return Get(Size() - 1)._cost;
@@ -130,6 +134,10 @@ float Path::CostAtPos(Vector3Par pos) const
 
 Vector3 Path::NearestPos(Vector3Par pos) const
 {
+    if (Size() <= 0)
+    {
+        return pos; // no path - stay in place
+    }
     if (Size() < 2)
     {
         return Get(Size() - 1)._pos;
@@ -150,6 +158,10 @@ Vector3 Path::PosAtCost(float cost) const
 {
     int next;
     int size = Size();
+    if (size <= 0)
+    {
+        return VZero; // no path
+    }
     for (next = 1; next < size; next++)
     {
         if (Get(next)._cost >= cost)
@@ -212,6 +224,10 @@ Vector3 Path::PosAtCost(float cost, Vector3Par point) const
 {
     int next;
     int size = Size();
+    if (size <= 0)
+    {
+        return point; // no path - stay in place
+    }
     for (next = 1; next < size; next++)
     {
         if (Get(next)._cost >= cost)
