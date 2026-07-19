@@ -2067,8 +2067,23 @@ void TankWithAI::AIPilot(AIUnit* unit, float deltaT)
     Limit(thrust, -1, 1);
 
     const float rotCoef = 5;
-    _thrustLWanted = thrust - headChange * rotCoef;
-    _thrustRWanted = thrust + headChange * rotCoef;
+    // the 1 s orientation prediction above acts as a strong damping term and
+    // leaves a steady-state heading error while turning; a small clamped
+    // integral trims it away without touching the proven P/D behavior
+    const float rotIntegral = 0.3f;
+    float turnCmd = headChange * rotCoef + _steerIntegral * rotIntegral;
+    _thrustLWanted = thrust - turnCmd;
+    _thrustRWanted = thrust + turnCmd;
+    if (fabs(_thrustLWanted) < 1 && fabs(_thrustRWanted) < 1 && fabs(speedWanted) > 0.5f)
+    {
+        // conditional integration - no windup when tracks saturated or stopped
+        _steerIntegral += headChange * deltaT;
+        saturate(_steerIntegral, -0.3f / rotIntegral, +0.3f / rotIntegral);
+    }
+    else
+    {
+        _steerIntegral *= 0.9f;
+    }
     Limit(_thrustLWanted, -1, 1);
     Limit(_thrustRWanted, -1, 1);
 

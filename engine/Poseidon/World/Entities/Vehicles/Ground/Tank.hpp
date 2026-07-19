@@ -243,6 +243,8 @@ class TankWithAI: public Tank
 {
 	typedef Tank base;
 
+	float _steerIntegral = 0; // AI steering integral trim
+
 	public:
 	TankWithAI( VehicleType *name, Person *driver );
 	~TankWithAI() override;
