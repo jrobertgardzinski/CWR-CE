@@ -19,6 +19,8 @@ enum UIMode
 	UIStrategyFire, // command unit: fire
 	UIStrategyGetIn, // command unit: get in vehicle
 	UIStrategyWatch, // command unit: watch position or target
+	UIStrategyTakeWeapon, // command unit: take weapon from a body
+	UIStrategyRearmAt, // command unit: rearm at the pointed supply
 	// define command groups
 	UIFireMin=UIFire,UIFireMax=UIFirePosLock,
 	UIStrategyMin=UIStrategy,UIStrategyMax=UIStrategyGetIn,

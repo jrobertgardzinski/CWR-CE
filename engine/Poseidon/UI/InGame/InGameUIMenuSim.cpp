@@ -3,6 +3,7 @@
 #include <Poseidon/World/World.hpp>
 #include <Poseidon/AI/AI.hpp>
 #include <Poseidon/World/Entities/Infantry/Person.hpp>
+#include <Poseidon/World/Entities/Infantry/SoldierOld.hpp>
 #include <Poseidon/Input/InputSubsystem.hpp>
 #include <Poseidon/UI/InGame/InGameUIImpl.hpp>
 #include <Poseidon/Graphics/Core/Engine.hpp>
@@ -695,7 +696,19 @@ void InGameUI::SimulateHUD(const Camera& camera, EntityAI* vehicle, CameraType c
                 else
                 {
                     const VehicleType* target = GWorld->Preloaded(VTypeTarget);
-                    if (_target->type->IsKindOf(target))
+                    Man* deadBody = dyn_cast<Man>(targetAI);
+                    VehicleSupply* pointedSupply = dyn_cast<VehicleSupply>(targetAI);
+                    if (deadBody && deadBody->IsDammageDestroyed())
+                    {
+                        // point at a body - ordered unit fetches its weapon
+                        _modeAuto = UIStrategyTakeWeapon;
+                    }
+                    else if (pointedSupply && pointedSupply->GetAmmoCargo() > 0)
+                    {
+                        // point at a crate - ordered units rearm there
+                        _modeAuto = UIStrategyRearmAt;
+                    }
+                    else if (_target->type->IsKindOf(target))
                     {
                         _modeAuto = UIStrategyAttack;
                     }

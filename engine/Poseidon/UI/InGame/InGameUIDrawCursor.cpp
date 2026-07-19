@@ -78,6 +78,10 @@ bool InGameUI::DrawMouseCursor(const Camera& camera, AIUnit* unit, bool td)
         case UIStrategyWatch:
             cursor = CursorStrategyWatch;
             break;
+        case UIStrategyTakeWeapon:
+        case UIStrategyRearmAt:
+            cursor = CursorStrategyGetIn; // no dedicated icon in 1.99 data yet
+            break;
     }
 
     // dim cursor with time when non-active

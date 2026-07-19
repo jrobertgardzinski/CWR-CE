@@ -1399,6 +1399,84 @@ void InGameUI::IssueCommand(EntityAI* vehicle, Command::Message cmd, bool follow
                 }
                 return;
             }
+            case UIStrategyTakeWeapon:
+            {
+                EntityAI* tgt = _target.IdExact();
+                if (!tgt)
+                {
+                    return;
+                }
+                RString weaponName;
+                for (int w = 0; w < tgt->NWeaponSystems(); w++)
+                {
+                    const WeaponType* weapon = tgt->GetWeaponSystem(w);
+                    if (weapon && weapon->_canDrop)
+                    {
+                        weaponName = weapon->GetName();
+                        break;
+                    }
+                }
+                if (weaponName.GetLength() == 0)
+                {
+                    return;
+                }
+                // one weapon - the first selected unit fetches it
+                for (int i = 0; i < MAX_UNITS_PER_GROUP; i++)
+                {
+                    AIUnit* u = GetSelectedUnit(i);
+                    if (!u)
+                    {
+                        continue;
+                    }
+                    Command cmd;
+                    cmd._message = Command::Action;
+                    cmd._action = ATTakeWeapon;
+                    cmd._target = tgt;
+                    cmd._destination = tgt->Position();
+                    cmd._param3 = weaponName;
+                    cmd._time = Glob.time + 480.0f; // COMMAND_TIMEOUT
+                    u->GetGroup()->SendAutoCommandToUnit(cmd, u, true);
+                    break;
+                }
+                ClearSelectedUnits();
+                return;
+            }
+            case UIStrategyRearmAt:
+            {
+                EntityAI* tgt = _target.IdExact();
+                if (!tgt)
+                {
+                    return;
+                }
+                // rearm at the pointed supply instead of auto-selected source
+                for (int i = 0; i < MAX_UNITS_PER_GROUP; i++)
+                {
+                    AIUnit* u = GetSelectedUnit(i);
+                    if (!u)
+                    {
+                        continue;
+                    }
+                    Command cmd2;
+                    cmd2._message = Command::Rearm;
+                    cmd2._target = tgt;
+                    cmd2._destination = tgt->Position();
+                    if (u->GetSubgroup() == grp->MainSubgroup())
+                    {
+                        cmd2._context = Command::CtxUIWithJoin;
+                        cmd2._joinToSubgroup = grp->MainSubgroup();
+                    }
+                    else
+                    {
+                        cmd2._context = Command::CtxUI;
+                    }
+                    PackedBoolArray list;
+                    list.Set(u->ID() - 1, true);
+                    grp->SendCommand(cmd2, list);
+                    SetSelectedUnit(i, nullptr);
+                }
+                ClearSelectedUnits();
+                return;
+            }
 
             default:
                 return;
