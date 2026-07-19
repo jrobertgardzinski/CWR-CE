@@ -511,7 +511,7 @@ void ResourceSupply::Simulate(float deltaT, SimulationImportance prec)
                 if (veh->GetType()->IsAttendant() && target->CommanderUnit() && target->NeedsAmbulance() > 0)
                 {
                     EntityAI* person = target->CommanderUnit()->GetPerson();
-                    person->Repair(1);
+                    person->FieldTreat();
                     _supplying = nullptr; // done
                     _alloc = nullptr;
                     return;

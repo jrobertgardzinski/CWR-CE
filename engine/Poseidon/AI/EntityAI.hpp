@@ -595,6 +595,7 @@ class EntityAI: public Entity
 	void Destroy( EntityAI *killer, float overkill, float minExp, float maxExp ) override;
 	bool IsDammageDestroyed() const override;
 	void Repair( float ammount=1.0 ) override;
+	void FieldTreat(); // battlefield healing - stabilizes, but wounds leave residual damage
 	void SetDammage(float dammage) override;
 	//! Used to notify enitity it has been dammaged
 	//!and may need to update its state

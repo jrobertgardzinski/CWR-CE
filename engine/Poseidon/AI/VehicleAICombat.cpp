@@ -362,6 +362,27 @@ void EntityAI::Repair(float ammount)
     base::Repair(ammount);
 }
 
+void EntityAI::FieldTreat()
+{
+    // field treatment is not surgery - it stops the bleeding, but a badly
+    // wounded limb keeps part of its damage: the soldier fights on slower
+    // and shakier (existing >= 0.3 wound effects), just never crawl-locked
+    const float residual = 0.5F;
+    const float residualMax = 0.85F; // below the 0.9 forced-crawl threshold
+    for (int i = 0; i < _hit.Size(); i++)
+    {
+        _hit[i] = floatMin(_hit[i] * residual, residualMax);
+    }
+    // stabilized - total damage drops under the NeedsAmbulance threshold
+    // (0.05), so the unit stops seeking further treatment
+    float dammage = GetTotalDammage();
+    const float stabilized = 0.04F;
+    if (dammage > stabilized)
+    {
+        base::Repair(dammage - stabilized);
+    }
+}
+
 void EntityAI::SetDammage(float dammage)
 {
     if (!_allowDammage && dammage > GetTotalDammage())
