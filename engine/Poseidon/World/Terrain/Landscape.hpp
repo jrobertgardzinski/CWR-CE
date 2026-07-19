@@ -502,7 +502,7 @@ class Landscape: public SerializeClass
 
 	public:
 	Landscape( Engine *engine, World *world, bool nets=false ); // default data
-	~Landscape();
+	virtual ~Landscape();
 
 	int GetTerrainRange() const {return _terrainRange;}
 	int GetTerrainRangeMask() const {return _terrainRangeMask;}

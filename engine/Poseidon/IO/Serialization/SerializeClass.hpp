@@ -27,4 +27,8 @@ class SerializeClass
     //! if IsDefaultValue returned true during Save, no class is saved
     //! and LoadDefaultValues is used instead of Serialize during Load
     virtual void LoadDefaultValues(ParamArchive& /*ar*/) {}
+
+    // polymorphic descendants (e.g. GameValueExt) are deleted through
+    // base pointers - undefined behavior without a virtual destructor
+    virtual ~SerializeClass() = default;
 };

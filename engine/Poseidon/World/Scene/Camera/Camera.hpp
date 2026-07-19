@@ -10,6 +10,10 @@ class Camera: public FrameBase
 	// camera is frame with projection
 	friend class Scene;
 
+	public:
+	// deleted through Camera * while derived cameras exist - needs to be virtual
+	virtual ~Camera() = default;
+
 	private:
 	Matrix4 _projection; // result in (0,0) .. (w,h) range
 	Matrix4 _projectionNormal; // result in (-1,-1) .. (+1,+1) range
