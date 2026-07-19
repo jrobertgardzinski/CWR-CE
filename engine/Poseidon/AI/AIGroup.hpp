@@ -617,6 +617,17 @@ public:
 	bool ReportSent(ReportSubject subject, const VehicleType *type);
 	void ReportFire(AIUnit *who, bool state);
 
+	// contact report throttling - remember recently reported targets so the
+	// radio does not repeat the same contact every time another unit sees it
+	enum {NRecentReports = 8};
+	struct RecentReport
+	{
+		OLink<EntityAI> id;
+		Foundation::Time time;
+	};
+	RecentReport _recentReports[NRecentReports];
+	int _recentReportNext = 0;
+
 	AIUnit::ResourceState GetHealthStateReported(AIUnit *unit);
 	AIUnit::ResourceState GetAmmoStateReported(AIUnit *unit);
 	AIUnit::ResourceState GetFuelStateReported(AIUnit *unit);
