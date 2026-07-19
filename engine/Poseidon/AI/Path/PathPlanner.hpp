@@ -6,7 +6,6 @@
 #define GET_UNACCESSIBLE				1e20F
 #define SET_UNACCESSIBLE				1e30F
 
-
 namespace Poseidon
 {
 typedef int AITime;
@@ -118,48 +117,6 @@ struct FieldPassing
 	float _cost;
 
 	LSError Serialize(ParamArchive &ar);
-};
-
-class PathTreeNode : public RefCount 
-{
-public:
-	float _cost;
-	float _heur;
-	PathTreeNode* _left;
-	PathTreeNode* _right;
-	PathTreeNode* _parent;
-	Ref<PathTreeNode> _next;
-	int _depth;
-	WORD _x;
-	WORD _z;
-	BYTE _mode;
-	BYTE _direction;
-	bool _open;
-
-	PathTreeNode(WORD x, WORD z, BYTE mode, BYTE direction,
-		PathTreeNode* left, PathTreeNode* right, PathTreeNode* parent,
-		float cost, float heur, int depth)
-	{
-		_x = x;
-		_z = z;
-		_mode = mode;
-		_direction = direction;
-		_cost = cost;
-		_left = left;
-		_right = right;
-		_parent = parent;
-		_heur = heur;
-		_depth = depth;
-		_open = true;
-		_next = nullptr;
-	}
-	~PathTreeNode() override
-	{
-		if (_next) 
-			_next = nullptr;
-	}
-
-	USE_FAST_ALLOCATOR;
 };
 
 typedef float (*CostFunction)(int x, int z, void *param);

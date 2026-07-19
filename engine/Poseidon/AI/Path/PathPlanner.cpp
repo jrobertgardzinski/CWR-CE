@@ -35,18 +35,11 @@ using Foundation::EnumName;
 #define Directions 20
 #define direction_delta directions20
 
-#define FieldsRange (LandRange / BigFieldSize)
-
 #define CHECK_PERFORMANCE 0
 #if CHECK_PERFORMANCE
 #undef LOG_STRAT
 #define LOG_STRAT 1
 #endif
-
-#define USE_NEW_ASTAR 1
-#define USE_BAD_COST_FUNCTION 0
-
-#if USE_NEW_ASTAR
 
 union ASSField
 {
@@ -105,119 +98,6 @@ float ASSCostFunction::operator()(const ASSField& field1, const ASSField& field2
     int dz = zt - zf;
 
     float result = GetFieldCost(xf, zf) + GetFieldCost(xt, zt);
-#if USE_BAD_COST_FUNCTION
-    switch (dx)
-    {
-        case -2:
-            switch (dz)
-            {
-                case -1:
-                    result += GetFieldCost(xf - 1, zf);
-                    result *= H_SQRT5_4;
-                    break;
-                case 0:
-                    result += GetFieldCost(xf - 1, zf);
-                    result *= 0.5;
-                    break;
-                case 1:
-                    result += GetFieldCost(xf - 1, zf);
-                    result *= H_SQRT5_4;
-                    break;
-                case -2:
-                case 2:
-                    Fail("Unused");
-                    break;
-            }
-            break;
-        case -1:
-            switch (dz)
-            {
-                case -2:
-                    result += GetFieldCost(xf, zf - 1);
-                    result *= H_SQRT5_4;
-                    break;
-                case -1:
-                    result *= H_SQRT2_2;
-                    break;
-                case 0:
-                    result *= 0.5;
-                    break;
-                case 1:
-                    result *= H_SQRT2_2;
-                    break;
-                case 2:
-                    result += GetFieldCost(xf, zf + 1);
-                    result *= H_SQRT5_4;
-                    break;
-            }
-            break;
-        case 0:
-            switch (dz)
-            {
-                case -2:
-                    result += GetFieldCost(xf, zf - 1);
-                    result *= 0.5;
-                    break;
-                case -1:
-                    result *= 0.5;
-                    break;
-                case 1:
-                    result *= 0.5;
-                    break;
-                case 2:
-                    result += GetFieldCost(xf, zf + 1);
-                    result *= 0.5;
-                    break;
-                case 0:
-                    Fail("Unused");
-                    break;
-            }
-            break;
-        case 1:
-            switch (dz)
-            {
-                case -2:
-                    result += GetFieldCost(xf, zf - 1);
-                    result *= H_SQRT5_4;
-                    break;
-                case -1:
-                    result *= H_SQRT2_2;
-                    break;
-                case 0:
-                    result *= 0.5;
-                    break;
-                case 1:
-                    result *= H_SQRT2_2;
-                    break;
-                case 2:
-                    result += GetFieldCost(xf, zf + 1);
-                    result *= H_SQRT5_4;
-                    break;
-            }
-            break;
-        case 2:
-            switch (dz)
-            {
-                case -1:
-                    result += GetFieldCost(xf + 1, zf);
-                    result *= H_SQRT5_4;
-                    break;
-                case 0:
-                    result += GetFieldCost(xf + 1, zf);
-                    result *= 0.5;
-                    break;
-                case 1:
-                    result += GetFieldCost(xf + 1, zf);
-                    result *= H_SQRT5_4;
-                    break;
-                case -2:
-                case 2:
-                    Fail("Unused");
-                    break;
-            }
-            break;
-    }
-#else
     switch (dx)
     {
         case -2:
@@ -337,7 +217,6 @@ float ASSCostFunction::operator()(const ASSField& field1, const ASSField& field2
             }
             break;
     }
-#endif
 
     EntityAI* veh = _vehicle;
     if (result < GET_UNACCESSIBLE && !veh->GetType()->IsKindOf(GLOB_WORLD->Preloaded(VTypeAir)) &&
@@ -451,7 +330,6 @@ class ASSClosedList : public MapStringToClass<ASSNodeRef, AutoArray<ASSNodeRef>,
 };
 
 typedef AStar<ASSField, ASSCostFunction, ASSHeuristicFunction, ASSIterator, ASSClosedList, ASSOpenList> AStarStrategic;
-#endif
 
 class AIPathPlanner : public IAIPathPlanner
 {
@@ -464,12 +342,7 @@ class AIPathPlanner : public IAIPathPlanner
     Vector3 _destination;
 
     // implementation of A*
-#if USE_NEW_ASTAR
     SRef<AStarStrategic> _algorithm;
-#else
-    Array2D<Ref<PathTreeNode>> _tree;
-    PathTreeNode* _open;
-#endif
     int _iterTotal;
 
     float _heuristic;
@@ -507,7 +380,6 @@ class AIPathPlanner : public IAIPathPlanner
   protected:
     float CalculateHeuristic(int xs, int zs, int xe, int ze);
     float GetFieldCost(int x, int z) { return _costFunction(x, z, _param); }
-    float GetCost(int xf, int zf, int dir, BYTE& mode);
     bool FindNearestSafe(int& x, int& z, float threshold);
     void CalculatePlanPositions();
 
@@ -527,28 +399,13 @@ IAIPathPlanner* CreateAIPathPlanner(CostFunction func, void* param)
 
 AIPathPlanner::AIPathPlanner(CostFunction func, void* param)
 {
-#if !USE_NEW_ASTAR
-    _tree.Dim(FieldsRange, FieldsRange);
-#endif
 
     _costFunction = func;
     _param = param;
 
-#if !USE_NEW_ASTAR
-    _open = nullptr;
-#endif
     _iterTotal = 0;
 
     Init();
-}
-
-inline float Heuristic(float dx, float dz)
-{
-    dx = fabs(dx);
-    dz = fabs(dz);
-    float minD = (dx + dz - fabs(dx - dz)) * 0.5;
-    float maxD = (dx + dz + fabs(dx - dz)) * 0.5;
-    return ((maxD - minD) + H_SQRT2 * minD);
 }
 
 void AIPathPlanner::Init()
@@ -702,25 +559,11 @@ bool AIPathPlanner::StartSearching(AI::ThinkImportance prec, VehicleWithAI* veh,
         }
 
         _heuristic = CalculateHeuristic(xs, zs, xe, ze);
-#if USE_NEW_ASTAR
         ASSField start(xs, zs);
         ASSField end(xe, ze);
         ASSCostFunction costFunction(_costFunction, _param, _vehicle);
         ASSHeuristicFunction heuristicFunction(_heuristic);
         _algorithm = new AStarStrategic(start, end, costFunction, heuristicFunction, GET_UNACCESSIBLE);
-#else
-        // erase old data
-        for (int i = 0; i < FieldsRange; i++)
-            for (int j = 0; j < FieldsRange; j++)
-                _tree(j, i) = 0;
-
-        _open = new PathTreeNode(xs, zs, FieldPassing::Move, 0xff, nullptr, nullptr, nullptr, 0,
-                                 Heuristic(xs - xe, zs - ze) * _heuristic, 0);
-        MapCoord xt = xs / BigFieldSize;
-        MapCoord zt = zs / BigFieldSize;
-        _open->_next = _tree(xt, zt);
-        _tree(xt, zt) = _open;
-#endif
 
         // continue witch searching
         _searching = true;
@@ -735,9 +578,7 @@ bool AIPathPlanner::StartSearching(AI::ThinkImportance prec, VehicleWithAI* veh,
 void AIPathPlanner::StopSearching()
 {
     _searching = false;
-#if USE_NEW_ASTAR
     _algorithm = nullptr;
-#endif
 }
 
 bool AIPathPlanner::ProcessSearching()
@@ -745,12 +586,10 @@ bool AIPathPlanner::ProcessSearching()
     if (!_vehicle)
     {
         _searching = false;
-#if USE_NEW_ASTAR
 #if LOG_STRAT
         LOG_DEBUG(AI, "Strategic path not found - vehicle destroyed");
 #endif
         _algorithm = nullptr;
-#endif
         return false;
     }
 
@@ -758,7 +597,6 @@ bool AIPathPlanner::ProcessSearching()
     _perfStart = ReadTsc();
 #endif
 
-#if USE_NEW_ASTAR
     _iterTotal += _algorithm->Process(ITER_PER_CYCLE);
 #if CHECK_PERFORMANCE
     _timeTotal += int(ReadTsc() - _perfStart);
@@ -823,9 +661,8 @@ bool AIPathPlanner::ProcessSearching()
             }
 
 #if LOG_STRAT
-            LOG_DEBUG(AI, "Strategic path found{}: {}, length {}, cost {:.0f} (in {} steps, time {:.3f}):",
-                      partial ? " (partial)" : "", (const char*)_vehicle->GetDebugName(), depth, last->_g, _iterTotal,
-                      1e-6 * _timeTotal);
+            LOG_DEBUG(AI, "Strategic path found{}: {}, length {}, cost {:.0f} (in {} steps):",
+                      partial ? " (partial)" : "", (const char*)_vehicle->GetDebugName(), depth, last->_g, _iterTotal);
 #endif
 
             CalculatePlanPositions();
@@ -836,8 +673,8 @@ bool AIPathPlanner::ProcessSearching()
         else
         {
 #if LOG_STRAT
-            LOG_DEBUG(AI, "Strategic path not found: {} (in {} steps, time {:.3f})",
-                      (const char*)_vehicle->GetDebugName(), _iterTotal, 1e-6 * _timeTotal);
+            LOG_DEBUG(AI, "Strategic path not found: {} (in {} steps)",
+                      (const char*)_vehicle->GetDebugName(), _iterTotal);
 #endif
             _algorithm = nullptr;
             return false;
@@ -848,182 +685,6 @@ bool AIPathPlanner::ProcessSearching()
         return true; // continue with searching
     }
 
-#else
-    MapCoord xe = toIntFloor(_destination.X() * InvLandGrid);
-    MapCoord ze = toIntFloor(_destination.Z() * InvLandGrid);
-    saturate(xe, 0, LandRange - 1);
-    saturate(ze, 0, LandRange - 1);
-
-    MapCoord xc, zc;
-    MapCoord xx, zz;
-    MapCoord xt, zt;
-    float cost, heur;
-    BYTE mode;
-
-    PathTreeNode *node, *best, *cur, *prev;
-    int iter = 0;
-
-    while (1) // search cycle
-    {
-        if (++iter > ITER_PER_CYCLE)
-        {
-#if CHECK_PERFORMANCE
-            _timeTotal += int(ReadTsc() - _perfStart);
-#endif
-            return true;
-        }
-        if (_open == nullptr || ++_iterTotal > MAX_ITER)
-        {
-            _searching = false;
-#if LOG_POSITION_PROBL
-            LOG_DEBUG(AI, "Problem: {}, from {:.0f}, {:.0f} to {:.0f}, {:.0f} path not found in {} iters.",
-                      (const char*)_vehicle->GetDebugName(), _vehicle->Position().X(), _vehicle->Position().Z(),
-                      xe * LandGrid + 0.5 * LandGrid, ze * LandGrid + 0.5 * LandGrid, _iterTotal);
-#endif
-#if CHECK_PERFORMANCE
-            _timeTotal += int(ReadTsc() - _perfStart);
-#endif
-#if LOG_STRAT
-            LOG_DEBUG(AI, "Strategic path not found - iterations limit reached: {} (in {} steps, time {:.3f})",
-                      (const char*)_vehicle->GetDebugName(), _iterTotal, 1e-6 * _timeTotal);
-#endif
-            return false; // no solution
-        }
-        best = _open;
-        best->_open = false;
-        _open = _open->_right;
-        if (_open != nullptr)
-            _open->_left = nullptr;
-
-        xc = best->_x;
-        zc = best->_z;
-        if (xc == xe && zc == ze)
-        {
-            cur = best;
-            int i = best->_depth;
-            _plan.Resize(i + 1);
-            while (cur)
-            {
-                FieldPassing& info = _plan[i--];
-                info._x = cur->_x;
-                info._z = cur->_z;
-                info._mode = (FieldPassing::Mode)cur->_mode;
-                info._cost = cur->_cost;
-                cur = cur->_parent;
-            }
-#if CHECK_PERFORMANCE
-            _timeTotal += int(ReadTsc() - _perfStart);
-#endif
-#if LOG_STRAT
-            LOG_DEBUG(AI, "Strategic path found: {}, length {}, cost {:.0f} (in {} steps, time {})",
-                      (const char*)_vehicle->GetDebugName(), _plan.Size(), best->_cost, _iterTotal, _timeTotal);
-            for (int i = 0; i < _plan.Size(); i++)
-                LOG_DEBUG(AI, "  {}, {}: {:.2f}", _plan[i]._x, _plan[i]._z, _plan[i]._cost);
-#endif
-            CalculatePlanPositions();
-
-            _searching = false;
-            return true; // path found
-        }
-
-        for (int i = 0; i < Directions; i++) // generate successors
-        {
-            xx = xc + direction_delta[i][0];
-            zz = zc + direction_delta[i][1];
-
-            if (!InRange(xx, zz))
-                continue;
-
-            cost = best->_cost + GetCost(xc, zc, i, mode);
-            if (cost >= GET_UNACCESSIBLE)
-                continue;
-            heur = Heuristic(xx - xe, zz - ze) * _heuristic;
-            node = nullptr;
-            xt = xx / BigFieldSize;
-            zt = zz / BigFieldSize;
-
-            cur = _tree(xt, zt);
-            while (cur)
-            {
-                if (cur->_x == xx && cur->_z == zz)
-                {
-                    node = cur;
-                    break;
-                }
-                cur = cur->_next;
-            }
-            if (node)
-            {
-                if (node->_open)
-                {
-                    if (cost < node->_cost)
-                    {
-                        node->_direction = i;
-                        node->_parent = best;
-                        node->_cost = cost;
-                        node->_depth = best->_depth + 1;
-                        if (node->_left)
-                            node->_left->_right = node->_right;
-                        else
-                            _open = node->_right;
-                        if (node->_right)
-                            node->_right->_left = node->_left;
-                        node->_right = node->_left = nullptr;
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                else
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                node = new PathTreeNode(xx, zz, mode, i, nullptr, nullptr, best, cost, heur, best->_depth + 1);
-                node->_next = _tree(xx / BigFieldSize, zz / BigFieldSize);
-                _tree(xx / BigFieldSize, zz / BigFieldSize) = node;
-            }
-            if (_open == nullptr)
-            {
-                _open = node;
-            }
-            else
-            {
-                cur = _open;
-                prev = nullptr;
-                float valNode = node->_cost + node->_heur;
-                while (cur)
-                {
-                    if (cur->_cost + cur->_heur < valNode)
-                    {
-                        prev = cur;
-                        cur = cur->_right;
-                    }
-                    else
-                        break;
-                }
-                if (prev)
-                {
-                    node->_right = prev->_right;
-                    if (node->_right)
-                        node->_right->_left = node;
-                    prev->_right = node;
-                    node->_left = prev;
-                }
-                else
-                {
-                    node->_right = _open;
-                    node->_left = nullptr;
-                    _open->_left = node;
-                    _open = node;
-                }
-            }
-        }
-    }
-#endif
 }
 
 float AIPathPlanner::CalculateHeuristic(int xs, int zs, int xe, int ze)
@@ -1129,209 +790,6 @@ float AIPathPlanner::CalculateHeuristic(int xs, int zs, int xe, int ze)
         count = 1;
     }
     return 0.9 * minCost + 0.1 * maxCost;
-}
-
-float AIPathPlanner::GetCost(int xf, int zf, int dir, BYTE& mode)
-{
-    mode = FieldPassing::Move;
-
-    const float H_SQRT5 = 2.2360679775;
-    const float H_SQRT5_4 = 0.25 * H_SQRT5;
-    const float H_SQRT2_2 = 0.5 * H_SQRT2;
-
-    const float ROAD_BONUS = 100.0F;
-
-    int xt = xf + direction_delta[dir][0];
-    int zt = zf + direction_delta[dir][1];
-
-    float result = GetFieldCost(xf, zf) + GetFieldCost(xt, zt);
-
-#if USE_BAD_COST_FUNCTION
-    switch (dir)
-    {
-        case 0:
-            result *= 0.5;
-            break;
-        case 1:
-            result += GetFieldCost(xf, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 2:
-            result *= H_SQRT2_2;
-            break;
-        case 3:
-            result += GetFieldCost(xf - 1, zf);
-            result *= H_SQRT5_4;
-            break;
-        case 4:
-            result *= 0.5;
-            break;
-        case 5:
-            result += GetFieldCost(xf - 1, zf);
-            result *= H_SQRT5_4;
-            break;
-        case 6:
-            result *= H_SQRT2_2;
-            break;
-        case 7:
-            result += GetFieldCost(xf, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 8:
-            result *= 0.5;
-            break;
-        case 9:
-            result += GetFieldCost(xf, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 10:
-            result *= H_SQRT2_2;
-            break;
-        case 11:
-            result += GetFieldCost(xf + 1, zf);
-            result *= H_SQRT5_4;
-            break;
-        case 12:
-            result *= 0.5;
-            break;
-        case 13:
-            result += GetFieldCost(xf + 1, zf);
-            result *= H_SQRT5_4;
-            break;
-        case 14:
-            result *= H_SQRT2_2;
-            break;
-        case 15:
-            result += GetFieldCost(xf, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 16:
-            result += GetFieldCost(xf, zf - 1);
-            result *= 0.5;
-            break;
-        case 17:
-            result += GetFieldCost(xf - 1, zf);
-            result *= 0.5;
-            break;
-        case 18:
-            result += GetFieldCost(xf, zf + 1);
-            result *= 0.5;
-            break;
-        case 19:
-            result += GetFieldCost(xf + 1, zf);
-            result *= 0.5;
-            break;
-        default:
-            Fail("Unaccessible for 20 directions.");
-            return SET_UNACCESSIBLE;
-    }
-#else
-    switch (dir)
-    {
-        case 0:
-            result *= 0.5;
-            break;
-        case 1:
-            result += GetFieldCost(xf, zf - 1) + GetFieldCost(xf - 1, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 2:
-            result *= H_SQRT2_2;
-            break;
-        case 3:
-            result += GetFieldCost(xf - 1, zf) + GetFieldCost(xf - 1, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 4:
-            result *= 0.5;
-            break;
-        case 5:
-            result += GetFieldCost(xf - 1, zf) + GetFieldCost(xf - 1, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 6:
-            result *= H_SQRT2_2;
-            break;
-        case 7:
-            result += GetFieldCost(xf, zf + 1) + GetFieldCost(xf - 1, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 8:
-            result *= 0.5;
-            break;
-        case 9:
-            result += GetFieldCost(xf, zf + 1) + GetFieldCost(xf + 1, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 10:
-            result *= H_SQRT2_2;
-            break;
-        case 11:
-            result += GetFieldCost(xf + 1, zf) + GetFieldCost(xf + 1, zf + 1);
-            result *= H_SQRT5_4;
-            break;
-        case 12:
-            result *= 0.5;
-            break;
-        case 13:
-            result += GetFieldCost(xf + 1, zf) + GetFieldCost(xf + 1, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 14:
-            result *= H_SQRT2_2;
-            break;
-        case 15:
-            result += GetFieldCost(xf, zf - 1) + GetFieldCost(xf + 1, zf - 1);
-            result *= H_SQRT5_4;
-            break;
-        case 16:
-            result *= 0.5;
-            result += GetFieldCost(xf, zf - 1);
-            break;
-        case 17:
-            result *= 0.5;
-            result += GetFieldCost(xf - 1, zf);
-            break;
-        case 18:
-            result *= 0.5;
-            result += GetFieldCost(xf, zf + 1);
-            break;
-        case 19:
-            result *= 0.5;
-            result += GetFieldCost(xf + 1, zf);
-            break;
-        default:
-            Fail("Unaccessible for 20 directions.");
-            return SET_UNACCESSIBLE;
-    }
-#endif
-
-    VehicleWithAI* veh = _vehicle;
-    if (result < GET_UNACCESSIBLE && !veh->GetType()->IsKindOf(GLOB_WORLD->Preloaded(VTypeAir)) &&
-        !veh->GetType()->IsKindOf(GLOB_WORLD->Preloaded(VTypeShip)) && !veh->IsCautious())
-    {
-        GeographyInfo gf = GLOB_LAND->GetGeography(xf, zf);
-        GeographyInfo gt = GLOB_LAND->GetGeography(xt, zt);
-        if (gf.u.road)
-        {
-            if (!gt.u.road)
-            {
-                // was on road, will be out of road
-                result += ROAD_BONUS;
-            }
-        }
-        else // !gf.road
-        {
-            if (gt.u.road)
-            {
-                // was out of road, will be on road
-                result -= ROAD_BONUS;
-            }
-        }
-        // the bonus must not make the edge negative - A* assumes non-negative costs
-        saturateMax(result, 0.0F);
-    }
-    return result;
 }
 
 bool AIPathPlanner::FindNearestSafe(int& x, int& z, float threshold)

@@ -48,8 +48,6 @@ using Foundation::EnumName;
 
 #define LOG_FORMATION_COEF 0
 
-DEFINE_FAST_ALLOCATOR(PathTreeNode)
-
 extern const FormInfo formations[AI::NForms][MAX_UNITS_PER_GROUP] = {
     // FormInfo(base, x, z, angle)
     {
