@@ -21,6 +21,7 @@ enum DifficultyType
     DT3rdPersonView,
     DTTracers,
     DTUltraAI,
+    DTUnlimitedSaves, // interrupt menu allows re-saving
     DTN // terminator / count
 };
 

@@ -1926,11 +1926,14 @@ DisplayInterrupt::DisplayInterrupt(ControlsContainer* parent) : Display(parent)
     else
     {
         RString name = GetSaveDirectory() + RString("save.fps");
-        if (QIFStream::FileExists(name))
+        bool saveExists = QIFStream::FileExists(name);
+        // classic rule: one manual save per mission - the save button hides
+        // once the file exists; UnlimitedSaves difficulty allows re-saving
+        if (saveExists && !USER_CONFIG.IsEnabled(DTUnlimitedSaves))
         {
             GetCtrl(IDC_INT_SAVE)->ShowCtrl(false);
         }
-        else
+        if (!saveExists)
         {
             GetCtrl(IDC_INT_LOAD)->ShowCtrl(false);
         }
