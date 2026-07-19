@@ -20,6 +20,7 @@ static DifficultyDesc s_diffDescs[DTN] = {
     DifficultyDesc("Tracers",        0, true,  true,  true),
     DifficultyDesc("UltraAI",        0, false, false, true),
     DifficultyDesc("RealisticInjuries", 0, false, true, true),
+    DifficultyDesc("UnlimitedSaves", 0, true,  false, true),
 };
 // clang-format on
 

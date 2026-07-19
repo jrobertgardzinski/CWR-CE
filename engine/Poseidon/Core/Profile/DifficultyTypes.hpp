@@ -22,6 +22,7 @@ enum DifficultyType
     DTTracers,
     DTUltraAI,
     DTRealisticInjuries, // field treatment leaves residual wounds
+    DTUnlimitedSaves, // interrupt menu allows re-saving
     DTN // terminator / count
 };
 

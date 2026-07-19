@@ -37,6 +37,7 @@ DifficultyDesc Config::diffDesc[DTN] = {
     DifficultyDesc("ClockIndicator", 0, true, true, true), DifficultyDesc("3rdPersonView", 0, true, true, true),
     DifficultyDesc("Tracers", 0, true, true, true),        DifficultyDesc("UltraAI", 0, false, false, true),
     DifficultyDesc("RealisticInjuries", 0, false, true, true),
+    DifficultyDesc("UnlimitedSaves", 0, true, false, true),
 };
 
 void Config::InitDifficulties()
@@ -55,6 +56,7 @@ void Config::InitDifficulties()
     diffDesc[10].stringId = IDS_DIFF_TRACERS;
     diffDesc[11].stringId = IDS_ULTRA_AI;
     diffDesc[12].stringId = IDS_DIFF_REALISTIC_INJURIES;
+    diffDesc[13].stringId = IDS_DIFF_UNLIMITED_SAVES;
 
     USER_CONFIG.InitDifficulties();
     GChatList.Enable(true);
