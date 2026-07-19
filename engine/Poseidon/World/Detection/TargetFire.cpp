@@ -1248,6 +1248,33 @@ bool EntityAI::WhatFireResult(FireResult& result, const Target& target, float ti
             continue;
         }
 
+        // never pick an explosive whose blast reaches the shooter or a fellow
+        // group member - the classic point-blank grenade suicide
+        // (emplaced charges and mines are armed at own feet by design)
+        if (ammo->indirectHitRange > 0 && ammo->_simulation != AmmoShotTimeBomb &&
+            ammo->_simulation != AmmoShotPipeBomb && ammo->_simulation != AmmoShotMine)
+        {
+            float dangerRange2 = Square(ammo->indirectHitRange * 1.5f);
+            bool dangerClose = target.position.Distance2(Position()) < dangerRange2;
+            AIGroup* grp = unit->GetGroup();
+            for (int u = 0; !dangerClose && grp && u < MAX_UNITS_PER_GROUP; u++)
+            {
+                AIUnit* member = grp->UnitWithID(u + 1);
+                if (member && member->GetLifeState() == AIUnit::LSAlive && member->GetVehicle() &&
+                    member->GetVehicle()->Position().Distance2(target.position) < dangerRange2)
+                {
+                    dangerClose = true;
+                }
+            }
+            if (dangerClose)
+            {
+#if DIAG_RESULT
+                LOG_DEBUG(AI, "   blast danger close");
+#endif
+                continue;
+            }
+        }
+
         float timeToReload = magazine->_reload + magazine->_reloadMagazine;
         timeToAim = floatMax(timeToReload, timeToAim);
         float distance = target.position.Distance(Position());
